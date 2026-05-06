@@ -9,17 +9,24 @@ const {
   StringSelectMenuBuilder,
 } = require("discord.js");
 
+const {
+  joinVoiceChannel,
+  getVoiceConnection,
+} = require("@discordjs/voice");
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildVoiceStates,
   ],
 });
 
 // CONFIG
 const WAR_CHANNEL_ID = "1498061270165884928";
 const WAR_ROLE_ID = "1495739301055565905";
+const VOICE_CHANNEL_ID = "ISI_VOICE_CHANNEL_KAMU";
 const COOLDOWN = 60 * 60 * 1000; // 1 jam
 
 const warData = new Map();
@@ -28,9 +35,36 @@ const negara = ["Libertera", "Warvane", "Ambarino", "Eloria"];
 
 client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
+
+  // ================= AUTO JOIN VOICE =================
+  try {
+    const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
+
+    if (!channel) return console.log("❌ Voice channel tidak ditemukan");
+
+    joinVoiceChannel({
+      channelId: VOICE_CHANNEL_ID,
+      guildId: channel.guild.id,
+      adapterCreator: channel.guild.voiceAdapterCreator,
+      selfDeaf: false,
+    });
+
+    console.log("🎧 Bot masuk voice channel");
+  } catch (err) {
+    console.log("Voice error:", err);
+  }
 });
 
-// ================= FOOTER EMBED (ADDED ICON SERVER) =================
+// ================= ANTI CRASH (24/7 SUPPORT) =================
+process.on("unhandledRejection", (err) => {
+  console.log("Unhandled Rejection:", err);
+});
+
+process.on("uncaughtException", (err) => {
+  console.log("Uncaught Exception:", err);
+});
+
+// ================= FOOTER =================
 function embedBase(title, description, guild) {
   return new EmbedBuilder()
     .setTitle(title)
@@ -38,11 +72,11 @@ function embedBase(title, description, guild) {
     .setColor("Red")
     .setFooter({
       text: "BETLEHEM • Copyright ©️2018 - BTHL",
-      iconURL: guild?.iconURL({ dynamic: true })
+      iconURL: guild?.iconURL({ dynamic: true }),
     });
 }
 
-// ================= CREATE EMBED =================
+// ================= CREATE WAR =================
 async function sendWar(channel, data) {
   const embed = embedBase(
     "⚔️ LIST REGION YANG MAU DI RAMPOK",
@@ -80,13 +114,11 @@ async function sendWar(channel, data) {
     components = [new ActionRowBuilder().addComponents(btn)];
   }
 
-  const msg = await channel.send({
+  return channel.send({
     content: `<@&${WAR_ROLE_ID}> ⚔️ **AYO KITA RAMPOK BWANGGG**`,
     embeds: [embed],
     components,
   });
-
-  return msg;
 }
 
 // ================= MESSAGE =================
@@ -134,7 +166,7 @@ client.on("messageCreate", async (message) => {
     if (!data) {
       return message.reply({
         embeds: [
-          embedBase("❌ ERROR", "Tidak ada rampok yang aktif.", message.guild),
+          embedBase("❌ ERROR", "Tidak ada rampok aktif.", message.guild),
         ],
       });
     }
