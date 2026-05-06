@@ -18,11 +18,11 @@ const client = new Client({
 });
 
 // 🔒 CHANNEL KHUSUS PERANG
-const WAR_CHANNEL_ID = "ISI_ID_CHANNEL_KAMU";
+const WAR_CHANNEL_ID = "1495757305667649557";
 
 const warData = new Map();
 
-const negara = ["Indonesia", "Amerika", "Rusia", "Jepang"];
+const negara = ["Libertera", "Warvane", "Ambarino", "Eloria"];
 
 client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
