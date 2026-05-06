@@ -71,7 +71,7 @@ async function sendWar(channel, data) {
   }
 
   const msg = await channel.send({
-    content: `<@&${WAR_ROLE_ID}> ⚔️ **PERANG AKTIF**`,
+    content: `<@&${WAR_ROLE_ID}> ⚔️ **RAMPOK SITEM MASIH AKTIF**`,
     embeds: [embed],
     components,
   });
@@ -93,7 +93,7 @@ client.on("messageCreate", async (message) => {
     if (data) {
       if (now - data.createdAt < COOLDOWN) {
         return message.reply(
-          "⚠️ Perang masih aktif!\nGunakan **`.perang show`** untuk melihat lagi embed."
+          "⚠️ Rampok masih aktif!\nGunakan **`.perang show`** untuk melihat lagi embed."
         );
       }
 
@@ -139,7 +139,7 @@ client.on("interactionCreate", async (interaction) => {
     warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **PERANG DIMULAI**`,
+      content: `<@&${WAR_ROLE_ID}> ⚔️ **WAKTU BETLEHEM MERAMPOK**`,
       embeds: [
         new EmbedBuilder()
           .setTitle("⚔️ BETLEHEM MERAMPOK DIMULAI")
