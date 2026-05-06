@@ -22,7 +22,7 @@ const WAR_CHANNEL_ID = "1498061270165884928";
 const WAR_ROLE_ID = "1495739301055565905";
 const COOLDOWN = 60 * 60 * 1000; // 1 jam
 
-// channel -> war data
+// pakai MESSAGE ID biar stabil
 const warData = new Map();
 
 const negara = ["Libertera", "Warvane", "Ambarino", "Eloria"];
@@ -31,6 +31,9 @@ client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
 });
 
+// =======================
+// CREATE EMBED WAR
+// =======================
 async function createWarMessage(channel, data) {
   const embed = new EmbedBuilder()
     .setTitle("⚔️ SISTEM ABSEN RAMPOK BETLEHEM")
@@ -63,7 +66,7 @@ async function createWarMessage(channel, data) {
     components = [new ActionRowBuilder().addComponents(select)];
   } else {
     const btn = new ButtonBuilder()
-      .setCustomId(`war_join_${channel.id}`)
+      .setCustomId(`war_join_${data.messageId}`)
       .setLabel("JOIN PERANG")
       .setStyle(ButtonStyle.Success);
 
@@ -79,24 +82,23 @@ async function createWarMessage(channel, data) {
   return msg;
 }
 
+// =======================
+// MESSAGE COMMAND
+// =======================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (message.channel.id !== WAR_CHANNEL_ID) return;
 
   let data = warData.get(message.channel.id);
 
-  // 🔥 COMMAND .perang
+  // .perang
   if (message.content === ".perang") {
     const now = Date.now();
 
-    // kalau sudah ada war aktif
     if (data) {
-      // kalau masih cooldown
       if (now - data.createdAt < COOLDOWN) {
-        return message.reply("⏳ Masih ada rampok aktif! tunggu 1 jam untuk reset.");
+        return message.reply("⏳ Masih ada rampok aktif! tunggu 1 jam.");
       }
-
-      // reset kalau sudah lewat 1 jam
       warData.delete(message.channel.id);
     }
 
@@ -111,34 +113,39 @@ client.on("messageCreate", async (message) => {
 
     newData.messageId = msg.id;
 
-    warData.set(message.channel.id, newData);
+    warData.set(msg.id, newData); // 🔥 PAKAI MESSAGE ID
   }
 
-  // 🔥 SHOW ULANG EMBED (kalau tenggelam)
+  // .perang show (repost kalau tenggelam)
   if (message.content === ".perang show") {
-    const data = warData.get(message.channel.id);
-    if (!data) return message.reply("❌ Tidak ada perang aktif.");
+    const all = [...warData.values()].find(
+      (d) => d.messageId && d.channelId === message.channel.id
+    );
 
-    const msg = await createWarMessage(message.channel, data);
+    if (!all) return message.reply("❌ Tidak ada perang aktif.");
 
-    data.messageId = msg.id;
-    warData.set(message.channel.id, data);
+    const msg = await createWarMessage(message.channel, all);
+
+    all.messageId = msg.id;
+    warData.set(msg.id, all);
   }
 });
 
+// =======================
+// INTERACTION
+// =======================
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isStringSelectMenu()) return;
-
-  if (interaction.customId === "war_select") {
-    const data = warData.get(interaction.message.channel.id);
+  if (interaction.isStringSelectMenu() && interaction.customId === "war_select") {
+    const msgId = interaction.message.id;
+    const data = warData.get(msgId);
     if (!data) return;
 
     data.target = interaction.values[0];
     data.participants = [];
 
-    warData.set(interaction.message.channel.id, data);
+    warData.set(msgId, data);
 
-    await interaction.update({
+    return interaction.update({
       content: `<@&${WAR_ROLE_ID}> ⚔️ **ROOM PERANG AKTIF**`,
       embeds: [
         new EmbedBuilder()
@@ -153,7 +160,7 @@ client.on("interactionCreate", async (interaction) => {
       components: [
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId(`war_join_${interaction.message.channel.id}`)
+            .setCustomId(`war_join_${msgId}`)
             .setLabel("JOIN PERANG")
             .setStyle(ButtonStyle.Success)
         ),
@@ -161,12 +168,15 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
+  // =======================
+  // JOIN BUTTON FIXED
+  // =======================
   if (
     interaction.isButton() &&
     interaction.customId.startsWith("war_join_")
   ) {
-    const channelId = interaction.message.channel.id;
-    const data = warData.get(channelId);
+    const msgId = interaction.message.id;
+    const data = warData.get(msgId);
     if (!data) return;
 
     const userId = interaction.user.id;
@@ -175,7 +185,7 @@ client.on("interactionCreate", async (interaction) => {
       data.participants.push(userId);
     }
 
-    await interaction.update({
+    return interaction.update({
       content: `<@&${WAR_ROLE_ID}> ⚔️ **ROOM PERANG AKTIF**`,
       embeds: [
         new EmbedBuilder()
@@ -194,7 +204,7 @@ client.on("interactionCreate", async (interaction) => {
       components: [
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId(`war_join_${channelId}`)
+            .setCustomId(`war_join_${msgId}`)
             .setLabel("JOIN PERANG")
             .setStyle(ButtonStyle.Success)
         ),
