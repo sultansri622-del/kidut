@@ -1,12 +1,14 @@
 {
-  "name": "war-bot",
+  "name": "war-bot-betlehem",
   "version": "1.0.0",
+  "description": "Discord War System Bot + Voice Auto Join",
   "main": "index.js",
-  "dependencies": {
-    "discord.js": "^14.14.1",
-    "dotenv": "^16.4.5"
-  },
   "scripts": {
     "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "@discordjs/voice": "^0.16.1",
+    "dotenv": "^16.4.5"
   }
 }
