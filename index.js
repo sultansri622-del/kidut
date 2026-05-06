@@ -33,12 +33,12 @@ client.once("ready", () => {
 // ================= CREATE EMBED =================
 async function sendWar(channel, data) {
   const embed = new EmbedBuilder()
-    .setTitle("⚔️ SISTEM RAMPOK BETLEHEM")
+    .setTitle("⚔️ LIST REGION YANG MAU DI RAMPOK")
     .setColor("Red")
     .setDescription(
       data.target
         ? `🎯 Target: **${data.target}**`
-        : "Pilih negara yang mau diserang!"
+        : "Pilih region yang mau diserang!"
     )
     .addFields({
       name: "👥 Peserta",
@@ -52,7 +52,7 @@ async function sendWar(channel, data) {
   if (!data.target) {
     const select = new StringSelectMenuBuilder()
       .setCustomId("war_select")
-      .setPlaceholder("Pilih negara target...")
+      .setPlaceholder("Pilih region target...")
       .addOptions(
         negara.map((n) => ({
           label: n,
@@ -64,7 +64,7 @@ async function sendWar(channel, data) {
   } else {
     const btn = new ButtonBuilder()
       .setCustomId("war_join")
-      .setLabel("JOIN PERANG")
+      .setLabel("JOIN RAMPOK")
       .setStyle(ButtonStyle.Success);
 
     components = [new ActionRowBuilder().addComponents(btn)];
@@ -117,7 +117,7 @@ client.on("messageCreate", async (message) => {
   // ================= SHOW =================
   if (message.content === ".perang show") {
     if (!data) {
-      return message.reply("❌ Tidak ada perang aktif.");
+      return message.reply("❌ Tidak ada rampok aktif.");
     }
 
     const msg = await sendWar(message.channel, data);
@@ -139,10 +139,10 @@ client.on("interactionCreate", async (interaction) => {
     warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **WAKTU BETLEHEM MERAMPOK**`,
+      content: `<@&${WAR_ROLE_ID}> ⚔️ **ABSEN YANG MAU IKUT RAMPOK**`,
       embeds: [
         new EmbedBuilder()
-          .setTitle("⚔️ BETLEHEM MERAMPOK DIMULAI")
+          .setTitle("⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️")
           .setColor("Red")
           .setDescription(`🎯 Target: **${data.target}**`)
           .addFields({
@@ -154,7 +154,7 @@ client.on("interactionCreate", async (interaction) => {
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId("war_join")
-            .setLabel("JOIN PERANG")
+            .setLabel("JOIN RAMPOK")
             .setStyle(ButtonStyle.Success)
         ),
       ],
@@ -173,10 +173,10 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **PERANG AKTIF**`,
+      content: `<@&${WAR_ROLE_ID}> ⚔️ **LANGSUNG PREPARE YAAA**`,
       embeds: [
         new EmbedBuilder()
-          .setTitle("⚔️ PERANG DIMULAI")
+          .setTitle("⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️")
           .setColor("Red")
           .setDescription(`🎯 Target: **${data.target}**`)
           .addFields({
