@@ -30,22 +30,32 @@ client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
 });
 
+// ================= FOOTER EMBED (ADDED ICON SERVER) =================
+function embedBase(title, description, guild) {
+  return new EmbedBuilder()
+    .setTitle(title)
+    .setDescription(description)
+    .setColor("Red")
+    .setFooter({
+      text: "BETLEHEM • Copyright ©️2018 - BTHL",
+      iconURL: guild?.iconURL({ dynamic: true })
+    });
+}
+
 // ================= CREATE EMBED =================
 async function sendWar(channel, data) {
-  const embed = new EmbedBuilder()
-    .setTitle("⚔️ LIST REGION YANG MAU DI RAMPOK")
-    .setColor("Red")
-    .setDescription(
-      data.target
-        ? `🎯 Target: **${data.target}**`
-        : "Pilih region yang mau diserang!"
-    )
-    .addFields({
-      name: "👥 Peserta",
-      value: data.participants.length
-        ? data.participants.map((id, i) => `${i + 1}. <@${id}>`).join("\n")
-        : "Belum ada peserta",
-    });
+  const embed = embedBase(
+    "⚔️ LIST REGION YANG MAU DI RAMPOK",
+    data.target
+      ? `🎯 Target: **${data.target}**`
+      : "Pilih region yang mau diserang!",
+    channel.guild
+  ).addFields({
+    name: "👥 Peserta",
+    value: data.participants.length
+      ? data.participants.map((id, i) => `${i + 1}. <@${id}>`).join("\n")
+      : "Belum ada peserta",
+  });
 
   let components;
 
@@ -89,12 +99,17 @@ client.on("messageCreate", async (message) => {
 
   // ================= .PERANG =================
   if (message.content === ".perang") {
-    // kalau masih ada perang aktif
     if (data) {
       if (now - data.createdAt < COOLDOWN) {
-        return message.reply(
-          "⚠️ Rampok masih aktif!\nGunakan **`.perang show`** untuk melihat lagi embed."
-        );
+        return message.reply({
+          embeds: [
+            embedBase(
+              "⚠️ PERINGATAN",
+              "Rampok masih aktif!\nGunakan `.perang show` untuk melihat embed.",
+              message.guild
+            ),
+          ],
+        });
       }
 
       warData.delete(message.channel.id);
@@ -117,7 +132,11 @@ client.on("messageCreate", async (message) => {
   // ================= SHOW =================
   if (message.content === ".perang show") {
     if (!data) {
-      return message.reply("❌ Tidak ada rampok aktif.");
+      return message.reply({
+        embeds: [
+          embedBase("❌ ERROR", "Tidak ada rampok yang aktif.", message.guild),
+        ],
+      });
     }
 
     const msg = await sendWar(message.channel, data);
@@ -141,14 +160,11 @@ client.on("interactionCreate", async (interaction) => {
     return interaction.update({
       content: `<@&${WAR_ROLE_ID}> ⚔️ **ABSEN YANG MAU IKUT RAMPOK**`,
       embeds: [
-        new EmbedBuilder()
-          .setTitle("⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️")
-          .setColor("Red")
-          .setDescription(`🎯 Target: **${data.target}**`)
-          .addFields({
-            name: "👥 Peserta",
-            value: "Belum ada peserta",
-          }),
+        embedBase(
+          "⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️",
+          `🎯 Target: **${data.target}**\n\n👥 Peserta:\nBelum ada peserta`,
+          interaction.guild
+        ),
       ],
       components: [
         new ActionRowBuilder().addComponents(
@@ -175,22 +191,21 @@ client.on("interactionCreate", async (interaction) => {
     return interaction.update({
       content: `<@&${WAR_ROLE_ID}> ⚔️ **LANGSUNG PREPARE YAAA**`,
       embeds: [
-        new EmbedBuilder()
-          .setTitle("⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️")
-          .setColor("Red")
-          .setDescription(`🎯 Target: **${data.target}**`)
-          .addFields({
-            name: "👥 Peserta",
-            value: data.participants.length
+        embedBase(
+          "⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️",
+          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${
+            data.participants.length
               ? data.participants.map((id, i) => `${i + 1}. <@${id}>`).join("\n")
-              : "Belum ada peserta",
-          }),
+              : "Belum ada peserta"
+          }`,
+          interaction.guild
+        ),
       ],
       components: [
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
             .setCustomId("war_join")
-            .setLabel("JOIN PERANG")
+            .setLabel("JOIN RAMPOK")
             .setStyle(ButtonStyle.Success)
         ),
       ],
