@@ -38,7 +38,7 @@ async function sendWar(channel, data) {
     .setDescription(
       data.target
         ? `🎯 Target: **${data.target}**`
-        : "Pilih region yang mau dirampok!"
+        : "Pilih negara yang mau diserang!"
     )
     .addFields({
       name: "👥 Peserta",
@@ -71,7 +71,7 @@ async function sendWar(channel, data) {
   }
 
   const msg = await channel.send({
-    content: `<@&${WAR_ROLE_ID}> ⚔️ **RAMPOK AKTIV BANG**`,
+    content: `<@&${WAR_ROLE_ID}> ⚔️ **PERANG AKTIF**`,
     embeds: [embed],
     components,
   });
@@ -93,7 +93,7 @@ client.on("messageCreate", async (message) => {
     if (data) {
       if (now - data.createdAt < COOLDOWN) {
         return message.reply(
-          "⚠️ Rampok masih aktif!\nGunakan **`.perang show`** untuk melihat lagi list."
+          "⚠️ Perang masih aktif!\nGunakan **`.perang show`** untuk melihat lagi embed."
         );
       }
 
@@ -117,7 +117,7 @@ client.on("messageCreate", async (message) => {
   // ================= SHOW =================
   if (message.content === ".perang show") {
     if (!data) {
-      return message.reply("❌ Tidak ada rampok aktif.");
+      return message.reply("❌ Tidak ada perang aktif.");
     }
 
     const msg = await sendWar(message.channel, data);
@@ -139,7 +139,7 @@ client.on("interactionCreate", async (interaction) => {
     warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **WAKTU BETLEHEM RAMPOK**`,
+      content: `<@&${WAR_ROLE_ID}> ⚔️ **PERANG DIMULAI**`,
       embeds: [
         new EmbedBuilder()
           .setTitle("⚔️ BETLEHEM MERAMPOK DIMULAI")
@@ -173,10 +173,10 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **RAMPOK AKTIF**`,
+      content: `<@&${WAR_ROLE_ID}> ⚔️ **PERANG AKTIF**`,
       embeds: [
         new EmbedBuilder()
-          .setTitle("⚔️  LIST RAMPOK")
+          .setTitle("⚔️ PERANG DIMULAI")
           .setColor("Red")
           .setDescription(`🎯 Target: **${data.target}**`)
           .addFields({
