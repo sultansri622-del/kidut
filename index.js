@@ -71,7 +71,7 @@ async function sendWar(channel, data) {
   }
 
   const msg = await channel.send({
-    content: `<@&${WAR_ROLE_ID}> ⚔️ **RAMPOK SITEM MASIH AKTIF**`,
+    content: `<@&${WAR_ROLE_ID}> ⚔️ **AYO KITA RAMPOK BWANGGG**`,
     embeds: [embed],
     components,
   });
