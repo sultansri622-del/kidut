@@ -22,23 +22,22 @@ const WAR_CHANNEL_ID = "1498061270165884928";
 
 const warData = new Map();
 
-const negara = ["Libertera", "Warvane", "Ambarino", "Eloria"];
+const negara = ["Libertera", "Ambarino", "Warvane", "Eloria"];
 
 client.once("ready", () => {
-  console.log(`Bot aktif ${client.user.tag}`);
+  console.log(`Bot aktif sebagai ${client.user.tag}`);
 });
 
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 
-  // 🔒 LOCK CHANNEL
   if (message.content === ".perang") {
     if (message.channel.id !== WAR_CHANNEL_ID) {
       return message.reply("❌ Command ini hanya bisa dipakai di room perang!");
     }
 
     const embed = new EmbedBuilder()
-      .setTitle("⚔️ SISTEM PERANG")
+      .setTitle("⚔️ SISTEM ABSEN PERANG BETLEHEM")
       .setColor("Red")
       .setDescription("Pilih negara yang mau diserang!");
 
@@ -67,19 +66,23 @@ client.on("messageCreate", async (message) => {
 });
 
 client.on("interactionCreate", async (interaction) => {
-  if (interaction.isStringSelectMenu() && interaction.customId === "war_select") {
+  // PILIH NEGARA TARGET
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId === "war_select"
+  ) {
     const data = warData.get(interaction.message.id);
     if (!data) return;
 
     data.target = interaction.values[0];
-    warData.set(interaction.message.id, data);
+    data.participants = [];
 
     const embed = new EmbedBuilder()
-      .setTitle("⚔️ PERANG DIMULAI")
+      .setTitle("⚔️ LIST YANG IKUT PERANG")
       .setColor("Red")
-      .setDescription(`🎯 Target: **${data.target}**`)
+      .setDescription(`🎯 Target Serangan: **${data.target}**`)
       .addFields({
-        name: "👥 Peserta",
+        name: "👥 Peserta Perang",
         value: "Belum ada peserta",
       });
 
@@ -90,33 +93,40 @@ client.on("interactionCreate", async (interaction) => {
 
     const row = new ActionRowBuilder().addComponents(btn);
 
+    warData.set(interaction.message.id, data);
+
     await interaction.update({
       embeds: [embed],
       components: [row],
     });
-
-    data.participants = [];
   }
 
-  if (interaction.isButton() && interaction.customId.startsWith("war_join_")) {
+  // JOIN BUTTON
+  if (
+    interaction.isButton() &&
+    interaction.customId.startsWith("war_join_")
+  ) {
     const msgId = interaction.customId.split("_")[2];
     const data = warData.get(msgId);
     if (!data) return;
 
-    const user = interaction.user.username;
+    const userId = interaction.user.id;
 
-    if (!data.participants.includes(user)) {
-      data.participants.push(user);
+    // anti double join
+    if (!data.participants.includes(userId)) {
+      data.participants.push(userId);
     }
 
     const embed = new EmbedBuilder()
       .setTitle("⚔️ PERANG DIMULAI")
       .setColor("Red")
-      .setDescription(`🎯 Target: **${data.target}**`)
+      .setDescription(`🎯 Target Serangan: **${data.target}**`)
       .addFields({
-        name: "👥 Peserta",
+        name: "👥 Peserta Perang",
         value: data.participants.length
-          ? data.participants.map((u, i) => `${i + 1}. ${u}`).join("\n")
+          ? data.participants
+              .map((id, i) => `${i + 1}. <@${id}>`)
+              .join("\n")
           : "Belum ada peserta",
       });
 
