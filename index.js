@@ -115,7 +115,7 @@ async function sendWar(channel, data) {
   }
 
   return channel.send({
-    content: `<@&${WAR_ROLE_ID}> ⚔️ **AYO KITA RAMPOK BWANGGG**`,
+    content: `<@&${WAR_ROLE_ID}> ⚔️ **AYO WAKTUNYA MERAMPOK**`,
     embeds: [embed],
     components,
   });
