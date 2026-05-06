@@ -17,12 +17,11 @@ const client = new Client({
   ],
 });
 
-// 🔒 CONFIG
+// CONFIG
 const WAR_CHANNEL_ID = "1498061270165884928";
 const WAR_ROLE_ID = "1495739301055565905";
 const COOLDOWN = 60 * 60 * 1000; // 1 jam
 
-// pakai MESSAGE ID biar stabil
 const warData = new Map();
 
 const negara = ["Libertera", "Warvane", "Ambarino", "Eloria"];
@@ -31,20 +30,18 @@ client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
 });
 
-// =======================
-// CREATE EMBED WAR
-// =======================
-async function createWarMessage(channel, data) {
+// ================= CREATE EMBED =================
+async function sendWar(channel, data) {
   const embed = new EmbedBuilder()
-    .setTitle("⚔️ SISTEM ABSEN RAMPOK BETLEHEM")
+    .setTitle("⚔️ SISTEM RAMPOK BETLEHEM")
     .setColor("Red")
     .setDescription(
       data.target
         ? `🎯 Target: **${data.target}**`
-        : "Pilih negara yang mau diserang!"
+        : "Pilih region yang mau dirampok!"
     )
     .addFields({
-      name: "👥 Peserta Perang",
+      name: "👥 Peserta",
       value: data.participants.length
         ? data.participants.map((id, i) => `${i + 1}. <@${id}>`).join("\n")
         : "Belum ada peserta",
@@ -66,7 +63,7 @@ async function createWarMessage(channel, data) {
     components = [new ActionRowBuilder().addComponents(select)];
   } else {
     const btn = new ButtonBuilder()
-      .setCustomId(`war_join_${data.messageId}`)
+      .setCustomId("war_join")
       .setLabel("JOIN PERANG")
       .setStyle(ButtonStyle.Success);
 
@@ -74,7 +71,7 @@ async function createWarMessage(channel, data) {
   }
 
   const msg = await channel.send({
-    content: `<@&${WAR_ROLE_ID}> ⚔️ **ROOM RAMPOK BETLEHEM AKTIF**`,
+    content: `<@&${WAR_ROLE_ID}> ⚔️ **RAMPOK AKTIV BANG**`,
     embeds: [embed],
     components,
   });
@@ -82,23 +79,24 @@ async function createWarMessage(channel, data) {
   return msg;
 }
 
-// =======================
-// MESSAGE COMMAND
-// =======================
+// ================= MESSAGE =================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (message.channel.id !== WAR_CHANNEL_ID) return;
 
-  let data = warData.get(message.channel.id);
+  const data = warData.get(message.channel.id);
+  const now = Date.now();
 
-  // .perang
+  // ================= .PERANG =================
   if (message.content === ".perang") {
-    const now = Date.now();
-
+    // kalau masih ada perang aktif
     if (data) {
       if (now - data.createdAt < COOLDOWN) {
-        return message.reply("⏳ Masih ada rampok aktif! tunggu 1 jam.");
+        return message.reply(
+          "⚠️ Rampok masih aktif!\nGunakan **`.perang show`** untuk melihat lagi list."
+        );
       }
+
       warData.delete(message.channel.id);
     }
 
@@ -109,44 +107,39 @@ client.on("messageCreate", async (message) => {
       messageId: null,
     };
 
-    const msg = await createWarMessage(message.channel, newData);
+    const msg = await sendWar(message.channel, newData);
 
     newData.messageId = msg.id;
 
-    warData.set(msg.id, newData); // 🔥 PAKAI MESSAGE ID
+    warData.set(message.channel.id, newData);
   }
 
-  // .perang show (repost kalau tenggelam)
+  // ================= SHOW =================
   if (message.content === ".perang show") {
-    const all = [...warData.values()].find(
-      (d) => d.messageId && d.channelId === message.channel.id
-    );
+    if (!data) {
+      return message.reply("❌ Tidak ada rampok aktif.");
+    }
 
-    if (!all) return message.reply("❌ Tidak ada perang aktif.");
+    const msg = await sendWar(message.channel, data);
 
-    const msg = await createWarMessage(message.channel, all);
-
-    all.messageId = msg.id;
-    warData.set(msg.id, all);
+    data.messageId = msg.id;
+    warData.set(message.channel.id, data);
   }
 });
 
-// =======================
-// INTERACTION
-// =======================
+// ================= INTERACTION =================
 client.on("interactionCreate", async (interaction) => {
   if (interaction.isStringSelectMenu() && interaction.customId === "war_select") {
-    const msgId = interaction.message.id;
-    const data = warData.get(msgId);
+    const data = warData.get(interaction.message.channel.id);
     if (!data) return;
 
     data.target = interaction.values[0];
     data.participants = [];
 
-    warData.set(msgId, data);
+    warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **ROOM PERANG AKTIF**`,
+      content: `<@&${WAR_ROLE_ID}> ⚔️ **WAKTU BETLEHEM RAMPOK**`,
       embeds: [
         new EmbedBuilder()
           .setTitle("⚔️ BETLEHEM MERAMPOK DIMULAI")
@@ -160,7 +153,7 @@ client.on("interactionCreate", async (interaction) => {
       components: [
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId(`war_join_${msgId}`)
+            .setCustomId("war_join")
             .setLabel("JOIN PERANG")
             .setStyle(ButtonStyle.Success)
         ),
@@ -168,15 +161,9 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // =======================
-  // JOIN BUTTON FIXED
-  // =======================
-  if (
-    interaction.isButton() &&
-    interaction.customId.startsWith("war_join_")
-  ) {
-    const msgId = interaction.message.id;
-    const data = warData.get(msgId);
+  // ================= JOIN =================
+  if (interaction.isButton() && interaction.customId === "war_join") {
+    const data = warData.get(interaction.message.channel.id);
     if (!data) return;
 
     const userId = interaction.user.id;
@@ -186,25 +173,23 @@ client.on("interactionCreate", async (interaction) => {
     }
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **ROOM PERANG AKTIF**`,
+      content: `<@&${WAR_ROLE_ID}> ⚔️ **RAMPOK AKTIF**`,
       embeds: [
         new EmbedBuilder()
-          .setTitle("⚔️ PERANG DIMULAI")
+          .setTitle("⚔️  LIST RAMPOK")
           .setColor("Red")
           .setDescription(`🎯 Target: **${data.target}**`)
           .addFields({
             name: "👥 Peserta",
             value: data.participants.length
-              ? data.participants
-                  .map((id, i) => `${i + 1}. <@${id}>`)
-                  .join("\n")
+              ? data.participants.map((id, i) => `${i + 1}. <@${id}>`).join("\n")
               : "Belum ada peserta",
           }),
       ],
       components: [
         new ActionRowBuilder().addComponents(
           new ButtonBuilder()
-            .setCustomId(`war_join_${msgId}`)
+            .setCustomId("war_join")
             .setLabel("JOIN PERANG")
             .setStyle(ButtonStyle.Success)
         ),
