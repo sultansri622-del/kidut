@@ -18,7 +18,7 @@ const client = new Client({
 });
 
 // 🔒 CHANNEL KHUSUS PERANG
-const WAR_CHANNEL_ID = "1495757305667649557";
+const WAR_CHANNEL_ID = "1498061270165884928";
 
 const warData = new Map();
 
