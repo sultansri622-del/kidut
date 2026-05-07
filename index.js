@@ -177,7 +177,7 @@ client.on("messageCreate", async (message) => {
           embeds: [
             embedBase(
               "⚠️ PERINGATAN",
-              "Rampok masih aktif!\nGunakan `.perang show` untuk melihat embed.",
+              "Rampok masih aktif!\nGunakan `.List` untuk melihat embed.",
               message.guild
             ),
           ],
@@ -201,8 +201,8 @@ client.on("messageCreate", async (message) => {
     warData.set(message.channel.id, newData);
   }
 
-  // ================= SHOW =================
-  if (message.content === ".perang show") {
+  // ================= LIST =================
+  if (message.content === ".List") {
     if (!data) {
       return message.reply({
         embeds: [
