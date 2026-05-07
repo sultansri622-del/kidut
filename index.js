@@ -248,7 +248,7 @@ client.on("interactionCreate", async (interaction) => {
       content: `<@&${WAR_ROLE_ID}> ⚔️ **ABSEN YANG MAU IKUT RAMPOK**`,
       embeds: [
         embedBase(
-          "⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️",
+          "LIST DIBAWAH YANG IKUT MERAMPOK",
           `🎯 Target: **${data.target}**\n\n👥 Peserta:\nBelum ada peserta`,
           interaction.guild
         ),
