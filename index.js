@@ -27,7 +27,7 @@ const client = new Client({
 const WAR_CHANNEL_ID = "1498061270165884928";
 const WAR_ROLE_ID = "1495739301055565905";
 const VOICE_CHANNEL_ID = "1488854856633680083";
-const COOLDOWN = 60 * 60 * 1000; // 1 jam
+const COOLDOWN = 3 * 60 * 60 * 1000; // 3 jam
 
 const warData = new Map();
 
@@ -99,7 +99,7 @@ function embedBase(title, description, guild) {
   return new EmbedBuilder()
     .setTitle(title)
     .setDescription(description)
-    .setColor("Red")
+    .setColor("Gold")
     .setFooter({
       text: "BETLEHEM • Copyright ©️2018 - BTHL",
       iconURL: guild?.iconURL?.({ dynamic: true }) || null,
@@ -124,7 +124,7 @@ function warButtons() {
 // ================= CREATE WAR =================
 async function sendWar(channel, data) {
   const embed = embedBase(
-    "⚔️ LIST REGION YANG MAU DI RAMPOK",
+    "LIST REGION YANG MAU DI RAMPOK",
     data.target
       ? `🎯 Target: **${data.target}**`
       : "Pilih region yang mau diserang!",
@@ -155,7 +155,7 @@ async function sendWar(channel, data) {
   }
 
   return channel.send({
-    content: `<@&${WAR_ROLE_ID}> ⚔️ **AYO WAKTUNYA MERAMPOK**`,
+    content: `<@&${WAR_ROLE_ID}>  **AYO WAKTUNYA MERAMPOK!!!!**`,
     embeds: [embed],
     components,
   });
@@ -177,7 +177,7 @@ client.on("messageCreate", async (message) => {
           embeds: [
             embedBase(
               "⚠️ PERINGATAN",
-              "Rampok masih aktif!\nGunakan `.List` untuk melihat embed.",
+              "Rampok masih aktif!\nGunakan `.list` untuk melihat yang ikut merampok.",
               message.guild
             ),
           ],
@@ -202,7 +202,7 @@ client.on("messageCreate", async (message) => {
   }
 
   // ================= LIST =================
-  if (message.content === ".List") {
+  if (message.content === ".list") {
     if (!data) {
       return message.reply({
         embeds: [
@@ -245,10 +245,10 @@ client.on("interactionCreate", async (interaction) => {
     warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **ABSEN YANG MAU IKUT RAMPOK**`,
+      content: `<@&${WAR_ROLE_ID}>  **YANG MAU IKUT RAMPOK LANGSUNG JOIN**`,
       embeds: [
         embedBase(
-          "LIST DIBAWAH YANG IKUT MERAMPOK",
+          "LISTNYA DIBAWAH INI YA GUYSSS",
           `🎯 Target: **${data.target}**\n\n👥 Peserta:\nBelum ada peserta`,
           interaction.guild
         ),
@@ -275,10 +275,10 @@ client.on("interactionCreate", async (interaction) => {
     warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **LANGSUNG PREPARE YAAA**`,
+      content: `<@&${WAR_ROLE_ID}>  **Yang udah masuk dalam list langsung prepare biar ga lama!!**`,
       embeds: [
         embedBase(
-          "⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️",
+          "LISTNYA DIBAWAH INI YA GUYSSS",
           `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${
             data.participants.length
               ? data.participants
@@ -311,10 +311,10 @@ client.on("interactionCreate", async (interaction) => {
     warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
-      content: `<@&${WAR_ROLE_ID}> ⚔️ **LANGSUNG PREPARE YAAA**`,
+      content: `<@&${WAR_ROLE_ID}> **Yang udah masuk dalam list langsung prepare biar ga lama!!**`,
       embeds: [
         embedBase(
-          "⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️",
+          "LISTNYA DIBAWAH INI YA GUYSSS",
           `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${
             data.participants.length
               ? data.participants
