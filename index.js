@@ -24,7 +24,7 @@ const client = new Client({
 });
 
 // CONFIG
-const WAR_CHANNEL_ID = "1495757305667649557";
+const WAR_CHANNEL_ID = "1498061270165884928";
 const WAR_ROLE_ID = "1495739301055565905";
 const VOICE_CHANNEL_ID = "1488854856633680083";
 const COOLDOWN = 60 * 60 * 1000; // 1 jam
@@ -37,21 +37,51 @@ client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
 
   // ================= AUTO JOIN VOICE =================
+  setTimeout(() => {
+    try {
+      const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
+
+      if (!channel) return console.log("❌ Voice channel tidak ditemukan");
+
+      joinVoiceChannel({
+        channelId: VOICE_CHANNEL_ID,
+        guildId: channel.guild.id,
+        adapterCreator: channel.guild.voiceAdapterCreator,
+        selfDeaf: false,
+      });
+
+      console.log("🎧 Bot masuk voice channel");
+    } catch (err) {
+      console.log("Voice error:", err);
+    }
+  }, 5000);
+});
+
+// ================= AUTO REJOIN VC =================
+client.on("voiceStateUpdate", async () => {
   try {
-    const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
+    const guild = client.guilds.cache.first();
 
-    if (!channel) return console.log("❌ Voice channel tidak ditemukan");
+    if (!guild) return;
 
-    joinVoiceChannel({
-      channelId: VOICE_CHANNEL_ID,
-      guildId: channel.guild.id,
-      adapterCreator: channel.guild.voiceAdapterCreator,
-      selfDeaf: false,
-    });
+    const connection = getVoiceConnection(guild.id);
 
-    console.log("🎧 Bot masuk voice channel");
+    if (!connection) {
+      const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
+
+      if (!channel) return;
+
+      joinVoiceChannel({
+        channelId: VOICE_CHANNEL_ID,
+        guildId: channel.guild.id,
+        adapterCreator: channel.guild.voiceAdapterCreator,
+        selfDeaf: false,
+      });
+
+      console.log("🔄 Bot rejoin voice");
+    }
   } catch (err) {
-    console.log("Voice error:", err);
+    console.log("Rejoin VC Error:", err);
   }
 });
 
@@ -72,8 +102,23 @@ function embedBase(title, description, guild) {
     .setColor("Red")
     .setFooter({
       text: "BETLEHEM • Copyright ©️2018 - BTHL",
-      iconURL: guild?.iconURL({ dynamic: true }),
+      iconURL: guild?.iconURL?.({ dynamic: true }) || null,
     });
+}
+
+// ================= BUTTON ROW =================
+function warButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId("war_join")
+      .setLabel("JOIN RAMPOK")
+      .setStyle(ButtonStyle.Success),
+
+    new ButtonBuilder()
+      .setCustomId("war_leave")
+      .setLabel("KELUAR LIST")
+      .setStyle(ButtonStyle.Danger)
+  );
 }
 
 // ================= CREATE WAR =================
@@ -106,12 +151,7 @@ async function sendWar(channel, data) {
 
     components = [new ActionRowBuilder().addComponents(select)];
   } else {
-    const btn = new ButtonBuilder()
-      .setCustomId("war_join")
-      .setLabel("JOIN RAMPOK")
-      .setStyle(ButtonStyle.Success);
-
-    components = [new ActionRowBuilder().addComponents(btn)];
+    components = [warButtons()];
   }
 
   return channel.send({
@@ -171,17 +211,32 @@ client.on("messageCreate", async (message) => {
       });
     }
 
+    try {
+      const oldMsg = await message.channel.messages.fetch(data.messageId);
+
+      if (oldMsg) {
+        await oldMsg.delete().catch(() => {});
+      }
+    } catch (err) {}
+
     const msg = await sendWar(message.channel, data);
 
     data.messageId = msg.id;
+
     warData.set(message.channel.id, data);
   }
 });
 
 // ================= INTERACTION =================
 client.on("interactionCreate", async (interaction) => {
-  if (interaction.isStringSelectMenu() && interaction.customId === "war_select") {
+
+  // ================= SELECT REGION =================
+  if (
+    interaction.isStringSelectMenu() &&
+    interaction.customId === "war_select"
+  ) {
     const data = warData.get(interaction.message.channel.id);
+
     if (!data) return;
 
     data.target = interaction.values[0];
@@ -198,20 +253,17 @@ client.on("interactionCreate", async (interaction) => {
           interaction.guild
         ),
       ],
-      components: [
-        new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("war_join")
-            .setLabel("JOIN RAMPOK")
-            .setStyle(ButtonStyle.Success)
-        ),
-      ],
+      components: [warButtons()],
     });
   }
 
   // ================= JOIN =================
   if (interaction.isButton() && interaction.customId === "war_join") {
+
+    if (interaction.replied || interaction.deferred) return;
+
     const data = warData.get(interaction.message.channel.id);
+
     if (!data) return;
 
     const userId = interaction.user.id;
@@ -220,6 +272,8 @@ client.on("interactionCreate", async (interaction) => {
       data.participants.push(userId);
     }
 
+    warData.set(interaction.message.channel.id, data);
+
     return interaction.update({
       content: `<@&${WAR_ROLE_ID}> ⚔️ **LANGSUNG PREPARE YAAA**`,
       embeds: [
@@ -227,20 +281,51 @@ client.on("interactionCreate", async (interaction) => {
           "⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️",
           `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${
             data.participants.length
-              ? data.participants.map((id, i) => `${i + 1}. <@${id}>`).join("\n")
+              ? data.participants
+                  .map((id, i) => `${i + 1}. <@${id}>`)
+                  .join("\n")
               : "Belum ada peserta"
           }`,
           interaction.guild
         ),
       ],
-      components: [
-        new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("war_join")
-            .setLabel("JOIN RAMPOK")
-            .setStyle(ButtonStyle.Success)
+      components: [warButtons()],
+    });
+  }
+
+  // ================= LEAVE =================
+  if (interaction.isButton() && interaction.customId === "war_leave") {
+
+    if (interaction.replied || interaction.deferred) return;
+
+    const data = warData.get(interaction.message.channel.id);
+
+    if (!data) return;
+
+    const userId = interaction.user.id;
+
+    data.participants = data.participants.filter(
+      (id) => id !== userId
+    );
+
+    warData.set(interaction.message.channel.id, data);
+
+    return interaction.update({
+      content: `<@&${WAR_ROLE_ID}> ⚔️ **LANGSUNG PREPARE YAAA**`,
+      embeds: [
+        embedBase(
+          "⚔️ INI LIST YANG MAU IKUT RAMPOK ⚔️",
+          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${
+            data.participants.length
+              ? data.participants
+                  .map((id, i) => `${i + 1}. <@${id}>`)
+                  .join("\n")
+              : "Belum ada peserta"
+          }`,
+          interaction.guild
         ),
       ],
+      components: [warButtons()],
     });
   }
 });
