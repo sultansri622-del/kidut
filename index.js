@@ -33,6 +33,17 @@ const warData = new Map();
 
 const negara = ["Libertera", "Warvane", "Ambarino", "Eloria"];
 
+// ================= JAM AKSES WIB =================
+function isWarTime() {
+  const now = new Date();
+
+  // WIB UTC+7
+  const wibHour = (now.getUTCHours() + 7) % 24;
+
+  // Aktif mulai 19:00 sampai sebelum 00:00
+  return wibHour >= 22;
+}
+
 client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
 
@@ -165,6 +176,23 @@ async function sendWar(channel, data) {
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (message.channel.id !== WAR_CHANNEL_ID) return;
+
+  // ================= BATAS JAM AKSES =================
+  if (
+    [".perang", ".list"].includes(message.content.toLowerCase())
+  ) {
+    if (!isWarTime()) {
+      return message.reply({
+        embeds: [
+          embedBase(
+            "⏰ BELUM WAKTUNYA RAMPOK",
+            "Jam segini banget nih 😭\n\nlist rampok baru bisa dipakai mulai jam **19:00 WIB sampai 00:00 WIB**.\n\nBalik lagi nanti malem ya bossku 🔥",
+            message.guild
+          ),
+        ],
+      });
+    }
+  }
 
   const data = warData.get(message.channel.id);
   const now = Date.now();
