@@ -186,7 +186,7 @@ client.on("messageCreate", async (message) => {
         embeds: [
           embedBase(
             "⏰ BELUM WAKTUNYA RAMPOK",
-            "Jam segini banget nih 😭\n\nlist rampok baru bisa dipakai mulai jam **19:00 WIB sampai 00:00 WIB**.\n\nBalik lagi nanti malem ya bossku 🔥",
+            "Jam segini banget nih 😭\n\nlist rampok baru bisa dipakai mulai jam **19:00 WIB sampai 00:00 WIB**.\n\nBalik lagi nanti malem ya bossku!! 🔥",
             message.guild
           ),
         ],
