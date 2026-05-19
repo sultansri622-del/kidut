@@ -33,6 +33,28 @@ const warData = new Map();
 
 const negara = ["Libertera", "Warvane", "Ambarino", "Eloria"];
 
+// ================= FORMAT LIST PESERTA =================
+function formatParticipants(participants) {
+  if (!participants.length) return "Belum ada peserta";
+
+  const utama = participants.slice(0, 10);
+  const cadangan = participants.slice(10);
+
+  let text = utama
+    .map((id, i) => `${i + 1}. <@${id}>`)
+    .join("\n");
+
+  if (cadangan.length) {
+    text +=
+      "\n\n📦 **Cadangan:**\n" +
+      cadangan
+        .map((id, i) => `${i + 11}. <@${id}>`)
+        .join("\n");
+  }
+
+  return text;
+}
+
 // ================= JAM AKSES WIB =================
 function isWarTime() {
   const now = new Date();
@@ -96,7 +118,7 @@ client.on("voiceStateUpdate", async () => {
   }
 });
 
-// ================= ANTI CRASH (24/7 SUPPORT) =================
+// ================= ANTI CRASH =================
 process.on("unhandledRejection", (err) => {
   console.log("Unhandled Rejection:", err);
 });
@@ -142,9 +164,7 @@ async function sendWar(channel, data) {
     channel.guild
   ).addFields({
     name: "👥 Peserta",
-    value: data.participants.length
-      ? data.participants.map((id, i) => `${i + 1}. <@${id}>`).join("\n")
-      : "Belum ada peserta",
+    value: formatParticipants(data.participants),
   });
 
   let components;
@@ -177,16 +197,13 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (message.channel.id !== WAR_CHANNEL_ID) return;
 
-  // ================= BATAS JAM AKSES =================
-  if (
-    [".perang", ".list"].includes(message.content.toLowerCase())
-  ) {
+  if ([".perang", ".list"].includes(message.content.toLowerCase())) {
     if (!isWarTime()) {
       return message.reply({
         embeds: [
           embedBase(
             "⏰ BELUM WAKTUNYA RAMPOK",
-            "Jam segini banget nih 😭\n\nlist rampok baru bisa dipakai mulai jam **19:00 WIB sampai 00:00 WIB**.\n\nBalik lagi nanti malem ya bossku!! 🔥",
+            "Jam segini banget nih 😭\n\nlist rampok baru bisa dipakai mulai jam **18:00 WIB sampai 00:00 WIB**.\n\nBalik lagi nanti ya bossku!! 🔥",
             message.guild
           ),
         ],
@@ -197,7 +214,6 @@ client.on("messageCreate", async (message) => {
   const data = warData.get(message.channel.id);
   const now = Date.now();
 
-  // ================= .PERANG =================
   if (message.content === ".perang") {
     if (data) {
       if (now - data.createdAt < COOLDOWN) {
@@ -229,7 +245,6 @@ client.on("messageCreate", async (message) => {
     warData.set(message.channel.id, newData);
   }
 
-  // ================= LIST =================
   if (message.content === ".list") {
     if (!data) {
       return message.reply({
@@ -258,7 +273,6 @@ client.on("messageCreate", async (message) => {
 // ================= INTERACTION =================
 client.on("interactionCreate", async (interaction) => {
 
-  // ================= SELECT REGION =================
   if (
     interaction.isStringSelectMenu() &&
     interaction.customId === "war_select"
@@ -277,7 +291,7 @@ client.on("interactionCreate", async (interaction) => {
       embeds: [
         embedBase(
           "LISTNYA DIBAWAH INI YA GUYSSS",
-          `🎯 Target: **${data.target}**\n\n👥 Peserta:\nBelum ada peserta`,
+          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${formatParticipants(data.participants)}`,
           interaction.guild
         ),
       ],
@@ -285,7 +299,6 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ================= JOIN =================
   if (interaction.isButton() && interaction.customId === "war_join") {
 
     if (interaction.replied || interaction.deferred) return;
@@ -307,13 +320,7 @@ client.on("interactionCreate", async (interaction) => {
       embeds: [
         embedBase(
           "LISTNYA DIBAWAH INI YA GUYSSS",
-          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${
-            data.participants.length
-              ? data.participants
-                  .map((id, i) => `${i + 1}. <@${id}>`)
-                  .join("\n")
-              : "Belum ada peserta"
-          }`,
+          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${formatParticipants(data.participants)}`,
           interaction.guild
         ),
       ],
@@ -321,7 +328,6 @@ client.on("interactionCreate", async (interaction) => {
     });
   }
 
-  // ================= LEAVE =================
   if (interaction.isButton() && interaction.customId === "war_leave") {
 
     if (interaction.replied || interaction.deferred) return;
@@ -343,13 +349,7 @@ client.on("interactionCreate", async (interaction) => {
       embeds: [
         embedBase(
           "LISTNYA DIBAWAH INI YA GUYSSS",
-          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${
-            data.participants.length
-              ? data.participants
-                  .map((id, i) => `${i + 1}. <@${id}>`)
-                  .join("\n")
-              : "Belum ada peserta"
-          }`,
+          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${formatParticipants(data.participants)}`,
           interaction.guild
         ),
       ],
