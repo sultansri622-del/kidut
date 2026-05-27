@@ -62,8 +62,8 @@ function isWarTime() {
   // WIB UTC+7
   const wibHour = (now.getUTCHours() + 7) % 24;
 
-  // Aktif mulai 18:00 sampai sebelum 00:00
-  return wibHour >= 18;
+  // Aktif mulai 17:00 sampai sebelum 00:00
+  return wibHour >= 17;
 }
 
 client.once("ready", () => {
