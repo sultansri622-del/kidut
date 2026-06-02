@@ -24,12 +24,16 @@ const client = new Client({
 });
 
 // CONFIG
-const WAR_CHANNEL_ID = "1495757305667649557";
+const WAR_CHANNEL_IDS = [
+  "1495757305667649557", // Channel A (lama)
+  "1499303518014668910",  // Channel B (ganti dengan ID channel B)
+];
 const WAR_ROLE_ID = "1495739301055565905";
 const VOICE_CHANNEL_ID = "1488854856633680083";
 const COOLDOWN = 3 * 60 * 60 * 1000; // 3 jam
 
-const warData = new Map();
+// DATA PERANG GLOBAL (1 perang untuk semua channel)
+let globalWarData = null;
 
 const negara = ["Libertera", "Warvane", "Ambarino", "Eloria"];
 
@@ -58,22 +62,16 @@ function formatParticipants(participants) {
 // ================= JAM AKSES WIB =================
 function isWarTime() {
   const now = new Date();
-
-  // WIB UTC+7
   const wibHour = (now.getUTCHours() + 7) % 24;
-
-  // Aktif mulai 17:00 sampai sebelum 00:00
   return wibHour >= 17;
 }
 
 client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
 
-  // ================= AUTO JOIN VOICE =================
   setTimeout(() => {
     try {
       const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
-
       if (!channel) return console.log("❌ Voice channel tidak ditemukan");
 
       joinVoiceChannel({
@@ -94,14 +92,11 @@ client.once("ready", () => {
 client.on("voiceStateUpdate", async () => {
   try {
     const guild = client.guilds.cache.first();
-
     if (!guild) return;
 
     const connection = getVoiceConnection(guild.id);
-
     if (!connection) {
       const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
-
       if (!channel) return;
 
       joinVoiceChannel({
@@ -154,7 +149,19 @@ function warButtons() {
   );
 }
 
-// ================= CREATE WAR =================
+// ================= HAPUS EMBED LAMA =================
+async function deleteOldEmbed() {
+  if (!globalWarData) return;
+  try {
+    const oldChannel = client.channels.cache.get(globalWarData.channelId);
+    if (oldChannel) {
+      const oldMsg = await oldChannel.messages.fetch(globalWarData.messageId).catch(() => null);
+      if (oldMsg) await oldMsg.delete().catch(() => {});
+    }
+  } catch (err) {}
+}
+
+// ================= SEND WAR =================
 async function sendWar(channel, data) {
   const embed = embedBase(
     "LIST REGION YANG MAU DI RAMPOK",
@@ -195,9 +202,14 @@ async function sendWar(channel, data) {
 // ================= MESSAGE =================
 client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
-  if (message.channel.id !== WAR_CHANNEL_ID) return;
 
-  if ([".perang", ".list"].includes(message.content.toLowerCase())) {
+  // Cek apakah channel termasuk war channel
+  if (!WAR_CHANNEL_IDS.includes(message.channel.id)) return;
+
+  const content = message.content.toLowerCase();
+
+  // Cek jam untuk .perang dan .list
+  if ([".perang", ".list"].includes(content)) {
     if (!isWarTime()) {
       return message.reply({
         embeds: [
@@ -211,12 +223,12 @@ client.on("messageCreate", async (message) => {
     }
   }
 
-  const data = warData.get(message.channel.id);
   const now = Date.now();
 
-  if (message.content === ".perang") {
-    if (data) {
-      if (now - data.createdAt < COOLDOWN) {
+  // ================= .PERANG =================
+  if (content === ".perang") {
+    if (globalWarData) {
+      if (now - globalWarData.createdAt < COOLDOWN) {
         return message.reply({
           embeds: [
             embedBase(
@@ -227,26 +239,27 @@ client.on("messageCreate", async (message) => {
           ],
         });
       }
-
-      warData.delete(message.channel.id);
+      // Cooldown habis, reset
+      await deleteOldEmbed();
+      globalWarData = null;
     }
 
-    const newData = {
+    globalWarData = {
       target: null,
       participants: [],
       createdAt: now,
       messageId: null,
+      channelId: message.channel.id,
     };
 
-    const msg = await sendWar(message.channel, newData);
-
-    newData.messageId = msg.id;
-
-    warData.set(message.channel.id, newData);
+    const msg = await sendWar(message.channel, globalWarData);
+    globalWarData.messageId = msg.id;
+    globalWarData.channelId = message.channel.id;
   }
 
-  if (message.content === ".list") {
-    if (!data) {
+  // ================= .LIST =================
+  if (content === ".list") {
+    if (!globalWarData) {
       return message.reply({
         embeds: [
           embedBase("❌ ERROR", "Tidak ada rampok aktif.", message.guild),
@@ -254,19 +267,13 @@ client.on("messageCreate", async (message) => {
       });
     }
 
-    try {
-      const oldMsg = await message.channel.messages.fetch(data.messageId);
+    // Hapus embed lama (bisa dari channel mana saja)
+    await deleteOldEmbed();
 
-      if (oldMsg) {
-        await oldMsg.delete().catch(() => {});
-      }
-    } catch (err) {}
-
-    const msg = await sendWar(message.channel, data);
-
-    data.messageId = msg.id;
-
-    warData.set(message.channel.id, data);
+    // Kirim embed baru di channel yang nulis .list
+    const msg = await sendWar(message.channel, globalWarData);
+    globalWarData.messageId = msg.id;
+    globalWarData.channelId = message.channel.id;
   }
 });
 
@@ -277,21 +284,17 @@ client.on("interactionCreate", async (interaction) => {
     interaction.isStringSelectMenu() &&
     interaction.customId === "war_select"
   ) {
-    const data = warData.get(interaction.message.channel.id);
+    if (!globalWarData) return;
 
-    if (!data) return;
-
-    data.target = interaction.values[0];
-    data.participants = [];
-
-    warData.set(interaction.message.channel.id, data);
+    globalWarData.target = interaction.values[0];
+    globalWarData.participants = [];
 
     return interaction.update({
       content: `<@&${WAR_ROLE_ID}>  **YANG MAU IKUT RAMPOK LANGSUNG JOIN**`,
       embeds: [
         embedBase(
           "LISTNYA DIBAWAH INI YA GUYSSS",
-          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${formatParticipants(data.participants)}`,
+          `🎯 Target: **${globalWarData.target}**\n\n👥 Peserta:\n${formatParticipants(globalWarData.participants)}`,
           interaction.guild
         ),
       ],
@@ -300,27 +303,20 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (interaction.isButton() && interaction.customId === "war_join") {
-
     if (interaction.replied || interaction.deferred) return;
-
-    const data = warData.get(interaction.message.channel.id);
-
-    if (!data) return;
+    if (!globalWarData) return;
 
     const userId = interaction.user.id;
-
-    if (!data.participants.includes(userId)) {
-      data.participants.push(userId);
+    if (!globalWarData.participants.includes(userId)) {
+      globalWarData.participants.push(userId);
     }
-
-    warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
       content: `<@&${WAR_ROLE_ID}>  **Yang udah masuk dalam list langsung prepare biar ga lama!!**`,
       embeds: [
         embedBase(
           "LISTNYA DIBAWAH INI YA GUYSSS",
-          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${formatParticipants(data.participants)}`,
+          `🎯 Target: **${globalWarData.target}**\n\n👥 Peserta:\n${formatParticipants(globalWarData.participants)}`,
           interaction.guild
         ),
       ],
@@ -329,27 +325,20 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   if (interaction.isButton() && interaction.customId === "war_leave") {
-
     if (interaction.replied || interaction.deferred) return;
-
-    const data = warData.get(interaction.message.channel.id);
-
-    if (!data) return;
+    if (!globalWarData) return;
 
     const userId = interaction.user.id;
-
-    data.participants = data.participants.filter(
+    globalWarData.participants = globalWarData.participants.filter(
       (id) => id !== userId
     );
-
-    warData.set(interaction.message.channel.id, data);
 
     return interaction.update({
       content: `<@&${WAR_ROLE_ID}> **Yang udah masuk dalam list langsung prepare biar ga lama!!**`,
       embeds: [
         embedBase(
           "LISTNYA DIBAWAH INI YA GUYSSS",
-          `🎯 Target: **${data.target}**\n\n👥 Peserta:\n${formatParticipants(data.participants)}`,
+          `🎯 Target: **${globalWarData.target}**\n\n👥 Peserta:\n${formatParticipants(globalWarData.participants)}`,
           interaction.guild
         ),
       ],
