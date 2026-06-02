@@ -26,7 +26,7 @@ const client = new Client({
 // CONFIG
 const WAR_CHANNEL_IDS = [
   "1495757305667649557", // Channel A (lama)
-  "1499303518014668910",  // Channel B (ganti dengan ID channel B)
+  "1511346686746951750",  // Channel B (ganti dengan ID channel B)
 ];
 const WAR_ROLE_ID = "1495739301055565905";
 const VOICE_CHANNEL_ID = "1488854856633680083";
