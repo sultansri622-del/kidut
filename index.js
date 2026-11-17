@@ -30,7 +30,7 @@ const WAR_CHANNEL_IDS = [
 ];
 const WAR_ROLE_ID = "1495739301055565905";
 const VOICE_CHANNEL_ID = "1488854856633680083";
-const COOLDOWN = 3 * 60 * 60 * 1000; // 3 jam
+const COOLDOWN = 2 * 60 * 60 * 1000; // 2 jam
 
 // DATA PERANG GLOBAL (1 perang untuk semua channel)
 let globalWarData = null;
