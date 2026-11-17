@@ -11,7 +11,8 @@ const {
 
 const {
   joinVoiceChannel,
-  getVoiceConnection,
+  VoiceConnectionStatus,
+  entersState,
 } = require("@discordjs/voice");
 
 const client = new Client({
@@ -66,51 +67,42 @@ function isWarTime() {
   return wibHour >= 17;
 }
 
+// ================= JOIN VC (AUTO JOIN + AUTO REJOIN) =================
+function connectToVC() {
+  try {
+    const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
+    if (!channel) return console.log("❌ Voice channel tidak ditemukan");
+
+    const connection = joinVoiceChannel({
+      channelId: VOICE_CHANNEL_ID,
+      guildId: channel.guild.id,
+      adapterCreator: channel.guild.voiceAdapterCreator,
+      selfDeaf: false,
+    });
+
+    console.log("🎧 Bot masuk voice channel");
+
+    connection.on(VoiceConnectionStatus.Disconnected, async () => {
+      try {
+        await Promise.race([
+          entersState(connection, VoiceConnectionStatus.Signalling, 5000),
+          entersState(connection, VoiceConnectionStatus.Connecting, 5000),
+        ]);
+      } catch {
+        console.log("🔄 Bot rejoin voice");
+        try { connection.destroy(); } catch {}
+        setTimeout(connectToVC, 3000);
+      }
+    });
+  } catch (err) {
+    console.log("Voice error:", err);
+    setTimeout(connectToVC, 5000);
+  }
+}
+
 client.once("ready", () => {
   console.log(`Bot aktif ${client.user.tag}`);
-
-  setTimeout(() => {
-    try {
-      const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
-      if (!channel) return console.log("❌ Voice channel tidak ditemukan");
-
-      joinVoiceChannel({
-        channelId: VOICE_CHANNEL_ID,
-        guildId: channel.guild.id,
-        adapterCreator: channel.guild.voiceAdapterCreator,
-        selfDeaf: false,
-      });
-
-      console.log("🎧 Bot masuk voice channel");
-    } catch (err) {
-      console.log("Voice error:", err);
-    }
-  }, 5000);
-});
-
-// ================= AUTO REJOIN VC =================
-client.on("voiceStateUpdate", async () => {
-  try {
-    const guild = client.guilds.cache.first();
-    if (!guild) return;
-
-    const connection = getVoiceConnection(guild.id);
-    if (!connection) {
-      const channel = client.channels.cache.get(VOICE_CHANNEL_ID);
-      if (!channel) return;
-
-      joinVoiceChannel({
-        channelId: VOICE_CHANNEL_ID,
-        guildId: channel.guild.id,
-        adapterCreator: channel.guild.voiceAdapterCreator,
-        selfDeaf: false,
-      });
-
-      console.log("🔄 Bot rejoin voice");
-    }
-  } catch (err) {
-    console.log("Rejoin VC Error:", err);
-  }
+  setTimeout(connectToVC, 5000);
 });
 
 // ================= ANTI CRASH =================
@@ -130,7 +122,7 @@ function embedBase(title, description, guild) {
     .setColor("Gold")
     .setFooter({
       text: "BETLEHEM • Copyright ©️2018 - BTHL",
-      iconURL: guild?.iconURL?.({ dynamic: true }) || null,
+      iconURL: guild?.iconURL?.() || null,
     });
 }
 
